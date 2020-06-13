@@ -2,6 +2,7 @@ mod args;
 mod chunk;
 mod chunk_type;
 mod commands;
+mod crc;
 mod png;
 
 pub type Error = anyhow::Error;

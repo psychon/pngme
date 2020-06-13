@@ -3,7 +3,7 @@ use std::str::FromStr;
 use std::fmt::{Display, Formatter};
 use anyhow::{anyhow, Context};
 
-use super::{Error, Result};
+use crate::{Error, Result};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ChunkType([u8; 4]);
