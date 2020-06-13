@@ -43,44 +43,60 @@ impl Chunk {
 
     pub fn as_bytes(&self) -> Vec<u8> {
         let mut result = Vec::new();
-        // TODO: endianness?
         result.extend(&self.length().to_be_bytes());
         result.extend(self.chunk_type.bytes());
         result.extend(&self.data);
         result.extend(&self.crc().to_be_bytes());
         result
     }
-}
 
-impl TryFrom<&[u8]> for Chunk {
-    type Error = Error;
-    fn try_from(value: &[u8]) -> Result<Self> {
+    pub fn parse_next(value: &[u8]) -> Result<(Self, &[u8])> {
         // Get the individual parts as byte slices
         if value.len() < 12 {
             return Err(anyhow!("Too short chunk data"));
         }
-        let crc_start = value.len() - 4;
         let length = &value[0..4];
         let chunk_type = &value[4..8];
-        let data = &value[8..crc_start];
-        let crc = &value[crc_start..];
+        let remaining = &value[8..];
 
-        // Parse the data
+        // Parse the values
         let length = u32::from_be_bytes(length.try_into()?);
         let chunk_type = ChunkType::new(chunk_type.try_into()?)?;
-        let crc = u32::from_be_bytes(crc.try_into()?);
 
-        if (length as usize != data.len()) || (length != data.len() as u32) {
-            return Err(anyhow!("Incorrect chunk length: {} != {}", length, data.len()))
+        // Check that the length is valid
+        if length > u32::max_value() - 4 {
+            return Err(anyhow!("Too large length"));
+        }
+        let length = usize::try_from(length)?;
+        if length + 4 < remaining.len() {
+            return Err(anyhow!("Too large length, larger than remaining data"));
         }
 
+        // Get the data and the CRC
+        let data = &remaining[..length];
+        let crc = &remaining[length..length + 4];
+        let remaining = &remaining[length + 4..];
+        let crc = u32::from_be_bytes(crc.try_into()?);
+
+        // Check that the CRC is valid
         let chunk = Chunk::new(chunk_type, data.to_vec());
         let chunk_crc = chunk.crc();
         if chunk_crc != crc {
             Err(anyhow!("Incorrect chunk CRC: {} != {}", crc, chunk_crc))
         } else {
-            Ok(chunk)
+            Ok((chunk, remaining))
         }
+    }
+}
+
+impl TryFrom<&[u8]> for Chunk {
+    type Error = Error;
+    fn try_from(value: &[u8]) -> Result<Self> {
+        let (chunk, remaining) = Self::parse_next(value)?;
+        if !remaining.is_empty() {
+            return Err(anyhow!("Trailing data left after chunk"));
+        }
+        Ok(chunk)
     }
 }
 
