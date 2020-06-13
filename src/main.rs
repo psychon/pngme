@@ -1,3 +1,5 @@
+use structopt::StructOpt;
+
 mod args;
 mod chunk;
 mod chunk_type;
@@ -9,5 +11,7 @@ pub type Error = anyhow::Error;
 pub type Result<T> = anyhow::Result<T>;
 
 fn main() -> Result<()> {
-    todo!()
+    let opt = args::Command::from_args();
+    println!("{:?}", opt);
+    Ok(())
 }
