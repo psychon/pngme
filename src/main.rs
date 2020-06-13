@@ -1,3 +1,6 @@
+// https://www.reddit.com/r/rust/comments/gzehpz/pngme_an_intermediate_rust_project/
+// https://picklenerd.github.io/pngme_book/
+
 use structopt::StructOpt;
 
 mod args;

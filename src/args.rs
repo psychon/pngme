@@ -9,7 +9,8 @@ pub enum Command {
     Encode {
         file: PathBuf,
         chunk_name: String,
-        message: String
+        message: String,
+        output_file: Option<PathBuf>,
     },
     #[structopt(name = "decode")]
     Decode {
