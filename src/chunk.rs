@@ -47,6 +47,7 @@ impl Chunk {
         result.extend(self.chunk_type.bytes());
         result.extend(&self.data);
         result.extend(&self.crc().to_be_bytes());
+        assert_eq!(result.len(), self.data.len() + 12);
         result
     }
 
@@ -68,8 +69,8 @@ impl Chunk {
             return Err(anyhow!("Too large length"));
         }
         let length = usize::try_from(length)?;
-        if length + 4 < remaining.len() {
-            return Err(anyhow!("Too large length, larger than remaining data"));
+        if length + 4 > remaining.len() {
+            return Err(anyhow!("Too large length {}, larger than remaining data {}", length, remaining.len()));
         }
 
         // Get the data and the CRC
